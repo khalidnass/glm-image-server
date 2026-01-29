@@ -5,7 +5,7 @@
 set -e
 
 IMAGE_NAME="glm-image-sglang"
-BASE_IMAGE="pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime"
+BASE_IMAGE="pytorch/pytorch:2.9.1-cuda12.8-cudnn9-devel"
 GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
 
 echo "=== Pulling base image ==="
