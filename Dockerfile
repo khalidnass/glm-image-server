@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # pip install git+https://github.com/huggingface/diffusers.git
 
 RUN pip install --no-cache-dir \
-    "sglang[diffusion] @ git+https://github.com/sgl-project/sglang.git#subdirectory=python"
+    "sglang[diffusion] @ git+https://github.com/sgl-project/sglang.git@v0.5.8#subdirectory=python"
 
 RUN pip install --no-cache-dir \
     git+https://github.com/huggingface/transformers.git
