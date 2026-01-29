@@ -144,6 +144,20 @@ with open("generated.png", "wb") as f:
 
 ## Known Issues
 
+### Pod restarts during model loading (OpenShift/Kubernetes)
+Model loading takes ~2 minutes. Default health probes will kill the pod before it's ready.
+
+**Fix**: Configure startup probe in your deployment:
+```yaml
+startupProbe:
+  httpGet:
+    path: /health
+    port: 30000
+  failureThreshold: 30
+  periodSeconds: 10
+  # Allows 5 minutes for startup
+```
+
 ### flash_attn3 not installed (Hopper GPUs)
 On H20/H100 GPUs, you may see:
 ```
