@@ -2,37 +2,46 @@
 
 Docker-based server for [GLM-Image](https://huggingface.co/zai-org/GLM-Image) using SGLang with **OpenAI-compatible API**.
 
+OpenShift compatible - runs as non-root user with arbitrary UID support.
+
 ## Requirements
 
 - Docker with NVIDIA GPU support (nvidia-docker2)
 - NVIDIA GPU with 24GB+ VRAM (40GB+ recommended)
-- CUDA 12.4 compatible driver
+- CUDA 12.4+ compatible driver
 
 ## Quick Start
 
 ### 1. Build the Docker image
 
 ```bash
-docker build -t glm-image-sglang .
+./build.sh
+# Creates: glm-image-sglang:<git-tag>
 ```
 
 ### 2. Run the server
 
 ```bash
-# Download model from HuggingFace on first run
-docker run --gpus all -p 30000:30000 -v ./models:/app/models glm-image-sglang
-
-# Or use a local model path
 docker run --gpus all -p 30000:30000 \
   -e MODEL_PATH=/app/models/GLM-Image \
   -v ./models:/app/models \
-  glm-image-sglang
+  glm-image-sglang:v0.4.0
 ```
 
 ### 3. Access the API
 
 - API: http://localhost:30000
 - Endpoints: `/v1/images/generations`, `/v1/images/edits`, `/v1/models`
+
+## Load from tar (offline deployment)
+
+```bash
+docker load -i glm-image-sglang-v0.4.0.tar
+docker run --gpus all -p 30000:30000 \
+  -e MODEL_PATH=/app/models/GLM-Image \
+  -v ./models:/app/models \
+  glm-image-sglang:v0.4.0
+```
 
 ## API Endpoints
 
@@ -72,9 +81,9 @@ docker run --gpus all -p 30000:30000 \
 | `guidance_scale` | float | 1.5 | Prompt adherence strength |
 | `seed` | int | random | For reproducible results |
 
-## Working Examples
+## Examples
 
-### Text-to-Image (Basic)
+### Text-to-Image
 
 ```bash
 curl http://localhost:30000/v1/images/generations \
@@ -86,24 +95,7 @@ curl http://localhost:30000/v1/images/generations \
   }' | python3 -c "import sys, json, base64; open('output.png', 'wb').write(base64.b64decode(json.load(sys.stdin)['data'][0]['b64_json']))"
 ```
 
-### Text-to-Image (All Parameters)
-
-```bash
-curl http://localhost:30000/v1/images/generations \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "zai-org/GLM-Image",
-    "prompt": "A futuristic cityscape with the text \"Welcome to 2050\" on a billboard",
-    "size": "1152x896",
-    "n": 1,
-    "response_format": "b64_json",
-    "num_inference_steps": 75,
-    "guidance_scale": 1.5,
-    "seed": 42
-  }' | python3 -c "import sys, json, base64; open('output.png', 'wb').write(base64.b64decode(json.load(sys.stdin)['data'][0]['b64_json']))"
-```
-
-### Image-to-Image (Basic)
+### Image-to-Image
 
 ```bash
 curl -X POST http://localhost:30000/v1/images/edits \
@@ -111,34 +103,6 @@ curl -X POST http://localhost:30000/v1/images/edits \
   -F "prompt=Replace the background with a space station" \
   -F "response_format=b64_json" \
   | python3 -c "import sys, json, base64; open('edited.png', 'wb').write(base64.b64decode(json.load(sys.stdin)['data'][0]['b64_json']))"
-```
-
-### Image-to-Image (All Parameters)
-
-```bash
-curl -X POST http://localhost:30000/v1/images/edits \
-  -F "model=zai-org/GLM-Image" \
-  -F "image=@input.jpg" \
-  -F "prompt=Transform into a watercolor painting style" \
-  -F "size=1024x1024" \
-  -F "n=1" \
-  -F "response_format=b64_json" \
-  -F "num_inference_steps=50" \
-  -F "guidance_scale=1.5" \
-  -F "seed=42" \
-  | python3 -c "import sys, json, base64; open('edited.png', 'wb').write(base64.b64decode(json.load(sys.stdin)['data'][0]['b64_json']))"
-```
-
-### List Models
-
-```bash
-curl http://localhost:30000/v1/models
-```
-
-### Health Check
-
-```bash
-curl http://localhost:30000/health
 ```
 
 ### Using OpenAI Python Client
@@ -152,42 +116,24 @@ client = OpenAI(
     api_key="not-needed"
 )
 
-# Text-to-Image
 response = client.images.generate(
     model="zai-org/GLM-Image",
     prompt='A robot painting with the text "Art by AI" on canvas',
     size="1024x1024",
-    n=1,
     response_format="b64_json"
 )
 
-image_data = base64.b64decode(response.data[0].b64_json)
 with open("generated.png", "wb") as f:
-    f.write(image_data)
-```
-
-### Test Inside Container
-
-```bash
-# Enter container
-docker exec -it <container_id> bash
-
-# Test text-to-image
-curl http://localhost:30000/v1/images/generations \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "A cat", "size": "512x512", "response_format": "b64_json"}'
-
-# Check health
-curl http://localhost:30000/health
+    f.write(base64.b64decode(response.data[0].b64_json))
 ```
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MODEL_PATH` | zai-org/GLM-Image | Model path (HuggingFace ID or local path) |
+| `MODEL_PATH` | (required) | Local path to GLM-Image model |
 | `HF_HOME` | /app/models | Model cache directory |
-| `HF_TOKEN` | - | HuggingFace token (if model requires auth) |
+| `HF_TOKEN` | - | HuggingFace token (if needed) |
 
 ## Tips
 
@@ -195,7 +141,6 @@ curl http://localhost:30000/health
 - **Dimensions**: Must be divisible by 32 (e.g., 1024x1024, 1152x896, 896x1152)
 - **Quality**: Increase `num_inference_steps` (50-100) for better results
 - **Reproducibility**: Use same `seed` value to get identical outputs
-- **VRAM**: Model requires ~24-40GB VRAM
 
 ## License
 
