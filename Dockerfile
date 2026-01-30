@@ -8,7 +8,7 @@
 #   Set MODEL_PATH env var to your mounted model path
 #   No internet required - uses local model path
 
-FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-devel
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -35,6 +35,9 @@ RUN pip install --no-cache-dir \
 
 RUN pip install --no-cache-dir \
     git+https://github.com/huggingface/diffusers.git
+
+# flash-attn for optimal performance on Hopper GPUs (H20/H100)
+RUN pip install --no-cache-dir flash-attn --no-build-isolation
 
 # Verify transformers has GlmImageForConditionalGeneration
 RUN python -c "from transformers import GlmImageForConditionalGeneration; print('GlmImageForConditionalGeneration OK')"
