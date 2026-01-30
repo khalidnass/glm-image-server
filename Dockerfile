@@ -13,8 +13,13 @@ FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 # System dependencies
+# - git, curl, vim: basic tools
+# - libnuma1: required by sgl_kernel for GPU operations
+# - build-essential: gcc required by Triton for JIT compilation at runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl vim \
+    libnuma1 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Official GLM-Image installation (from https://huggingface.co/zai-org/GLM-Image):
@@ -45,14 +50,6 @@ ENV HF_HUB_OFFLINE=1
 ENV MODEL_PATH=
 
 EXPOSE 30000
-
-# libnuma1 required by sgl_kernel for GPU operations
-RUN apt-get update && apt-get install -y --no-install-recommends libnuma1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# build-essential (gcc) required by Triton for JIT compilation at runtime
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # OpenShift compatibility: run as arbitrary UID with group 0
 RUN chgrp -R 0 /app && chmod -R g=u /app
