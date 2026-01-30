@@ -30,15 +30,17 @@ See README.md for complete API usage examples and parameters.
 
 ## Architecture
 
-Multi-stage Docker build:
+Single devel image Docker build:
 
-- **Dockerfile** - Two-stage build:
-  - Stage 1 (builder): Compiles flash-attn from source using devel image with CUDA toolkit
-  - Stage 2 (runtime): Smaller runtime image with pre-compiled flash-attn copied from builder
+- **Dockerfile** - Single-stage build using devel image:
+  - Uses devel image with full CUDA toolkit (gcc, nvcc, ninja)
+  - Compiles flash-attn from source
+  - All build tools available at runtime for Triton JIT compilation
   - Installs SGLang + transformers + diffusers from git main
   - Sets `HF_HUB_OFFLINE=1` for air-gapped environments
   - Runs as non-root user (UID 1001) for OpenShift compatibility
-- **build.sh** - Pulls both devel and runtime base images, builds with `--progress=plain` to show output. Tags image with current git tag or short commit hash. Uses `MAX_JOBS=2` to limit parallel compilation.
+  - Image size ~8GB (vs ~6GB for multi-stage, negligible vs ~20GB model)
+- **build.sh** - Pulls devel base image, builds with `--progress=plain` to show output. Tags image with current git tag or short commit hash. Uses `MAX_JOBS=2` to limit parallel compilation.
 - **download-packages.sh** - Downloads pip packages to `pip-cache/` (for reference/offline scenarios, but Dockerfile uses git URLs directly)
 - **SGLang server** - Port 30000, OpenAI-compatible API (`/v1/images/generations`, `/v1/images/edits`)
 
@@ -72,13 +74,13 @@ Multi-stage Docker build:
 - Fix: Set memory limit to 64Gi in deployment
 
 ### flash-attn (Hopper GPUs - H20/H100)
-- **flash-attn 2.x is now included** - compiled in multi-stage build and copied to runtime image
+- **flash-attn 2.x is now included** - compiled from source in devel image
 - Warning about `flash_attn 3 package` may still appear - this is a separate Hopper-specific optimization
 - Server works with flash-attn 2.x, flash-attn 3 would provide additional performance on H100/H20
 
 ### Missing C compiler for Triton JIT
 - Error: `Failed to find C compiler`
-- Fix: Add `build-essential` to apt-get install in Dockerfile (already done)
+- Fix: Using devel image provides gcc, nvcc, and all build tools (already done)
 
 ### Missing libnuma.so.1
 - Error: `ImportError: libnuma.so.1: cannot open shared object file`
