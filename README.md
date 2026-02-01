@@ -112,7 +112,7 @@ curl -X POST http://localhost:30000/v1/images/edits \
 pip install requests openai
 ```
 
-#### Text-to-Image
+#### Text-to-Image, then Edit
 
 ```python
 import requests
@@ -120,6 +120,7 @@ import base64
 
 BASE_URL = "http://localhost:30000"
 
+# Step 1: Generate an image
 response = requests.post(
     f"{BASE_URL}/v1/images/generations",
     json={
@@ -133,20 +134,14 @@ response = requests.post(
 data = response.json()
 img_bytes = base64.b64decode(data["data"][0]["b64_json"])
 
-with open("output.png", "wb") as f:
+with open("generated.png", "wb") as f:
     f.write(img_bytes)
-```
 
-#### Image Editing
+print("Generated image saved to generated.png")
 
-```python
-import requests
-import base64
-
-BASE_URL = "http://localhost:30000"
-
-with open("input.png", "rb") as f:
-    files = {"image": ("input.png", f, "image/png")}
+# Step 2: Edit the generated image
+with open("generated.png", "rb") as f:
+    files = {"image": ("generated.png", f, "image/png")}
     data = {
         "prompt": "Add a rainbow in the sky",
         "size": "1024x1024",
@@ -159,6 +154,8 @@ img_bytes = base64.b64decode(result["data"][0]["b64_json"])
 
 with open("edited.png", "wb") as f:
     f.write(img_bytes)
+
+print("Edited image saved to edited.png")
 ```
 
 #### Health Check and List Models
@@ -188,7 +185,7 @@ client = OpenAI(
     api_key="not-needed"
 )
 
-# Text-to-image
+# Step 1: Generate an image
 response = client.images.generate(
     model="zai-org/GLM-Image",
     prompt='A robot painting with the text "Art by AI" on canvas',
@@ -199,8 +196,10 @@ response = client.images.generate(
 with open("generated.png", "wb") as f:
     f.write(base64.b64decode(response.data[0].b64_json))
 
-# Image editing
-with open("input.png", "rb") as img_file:
+print("Generated image saved to generated.png")
+
+# Step 2: Edit the generated image
+with open("generated.png", "rb") as img_file:
     response = client.images.edit(
         model="zai-org/GLM-Image",
         image=img_file,
@@ -211,6 +210,8 @@ with open("input.png", "rb") as img_file:
 
 with open("edited.png", "wb") as f:
     f.write(base64.b64decode(response.data[0].b64_json))
+
+print("Edited image saved to edited.png")
 ```
 
 ## Environment Variables
