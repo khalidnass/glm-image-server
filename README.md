@@ -146,8 +146,8 @@ print("Generated image saved to generated.png")
 with open("generated.png", "rb") as f:
     files = {"image": ("generated.png", f, "image/png")}
     data = {
+        "model": "zai-org/GLM-Image",
         "prompt": "Add a rainbow in the sky",
-        "size": "1024x1024",
         "response_format": "b64_json"
     }
     response = requests.post(f"{BASE_URL}/v1/images/edits", files=files, data=data, timeout=600)
@@ -159,6 +159,33 @@ with open("edited.png", "wb") as f:
     f.write(img_bytes)
 
 print("Edited image saved to edited.png")
+
+
+#### Image Edit (standalone)
+
+```python
+import requests
+import base64
+
+BASE_URL = "http://localhost:30000"
+
+with open("input.jpg", "rb") as f:
+    files = {"image": ("input.jpg", f, "image/jpeg")}
+    data = {
+        "model": "zai-org/GLM-Image",
+        "prompt": "Replace the background with a snow forest",
+        "response_format": "b64_json"
+    }
+    response = requests.post(f"{BASE_URL}/v1/images/edits", files=files, data=data, timeout=600)
+
+if response.status_code == 200:
+    result = response.json()
+    img_bytes = base64.b64decode(result["data"][0]["b64_json"])
+    with open("edited.png", "wb") as f:
+        f.write(img_bytes)
+    print("Edited image saved to edited.png")
+else:
+    print(f"Error: {response.text}")
 ```
 
 #### High Quality vs Fast Generation
