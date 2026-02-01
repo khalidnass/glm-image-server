@@ -10,14 +10,14 @@ GLM-Image Server using SGLang - a Docker container that serves the [GLM-Image](h
 
 ### Build and run
 ```bash
-./build.sh                    # Build image tagged with git tag (e.g., glm-image-sglang:v0.4.3)
-docker run --gpus all -p 30000:30000 -e MODEL_PATH=/app/models/GLM-Image -v ./models:/app/models glm-image-sglang:v0.4.3
+./build.sh                    # Build image tagged with git tag (e.g., glm-image-sglang:v0.4.4)
+docker run --gpus all -p 30000:30000 -e MODEL_PATH=/app/models/GLM-Image -v ./models:/app/models glm-image-sglang:v0.4.4
 ```
 
 ### Save/load Docker image (offline deployment)
 ```bash
-docker save glm-image-sglang:v0.4.3 -o glm-image-sglang-v0.4.3.tar
-docker load -i glm-image-sglang-v0.4.3.tar
+docker save glm-image-sglang:v0.4.4 -o glm-image-sglang-v0.4.4.tar
+docker load -i glm-image-sglang-v0.4.4.tar
 ```
 
 ### Test the API
@@ -39,7 +39,7 @@ Single devel image Docker build:
   - Installs SGLang + transformers + diffusers from git main
   - Sets `HF_HUB_OFFLINE=1` for air-gapped environments
   - Runs as non-root user (UID 1001) for OpenShift compatibility
-  - Image size ~8GB (vs ~6GB for multi-stage, negligible vs ~20GB model)
+  - Image size ~11GB (vs ~6GB for multi-stage, negligible vs ~20GB model)
 - **build.sh** - Pulls devel base image, builds with `--progress=plain` to show output. Tags image with current git tag or short commit hash. Uses `MAX_JOBS=2` to limit parallel compilation.
 - **download-packages.sh** - Downloads pip packages to `pip-cache/` (for reference/offline scenarios, but Dockerfile uses git URLs directly)
 - **SGLang server** - Port 30000, OpenAI-compatible API (`/v1/images/generations`, `/v1/images/edits`)
@@ -61,7 +61,7 @@ Single devel image Docker build:
 - Tag `sglang-v0.5.8` exists for reference but Dockerfile correctly uses main branch
 
 ### Docker tagging
-- **Do NOT use `latest` tag** - always use git tag version (e.g., `glm-image-sglang:v0.4.3`)
+- **Do NOT use `latest` tag** - always use git tag version (e.g., `glm-image-sglang:v0.4.4`)
 
 ### Pod restarts during model loading (OpenShift/Kubernetes)
 - Model loading takes ~2 minutes
