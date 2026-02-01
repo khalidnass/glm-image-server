@@ -158,6 +158,59 @@ with open("edited.png", "wb") as f:
 print("Edited image saved to edited.png")
 ```
 
+#### High Quality vs Fast Generation
+
+```python
+import requests
+import base64
+
+BASE_URL = "http://localhost:30000"
+
+# HIGH QUALITY - slower, better results
+response = requests.post(
+    f"{BASE_URL}/v1/images/generations",
+    json={
+        "prompt": "A detailed portrait of a medieval knight",
+        "size": "1536x1536",           # Higher resolution
+        "num_inference_steps": 100,     # More steps = better quality
+        "guidance_scale": 2.0,          # Stronger prompt adherence
+        "response_format": "b64_json"
+    },
+    timeout=600
+)
+
+data = response.json()
+with open("high_quality.png", "wb") as f:
+    f.write(base64.b64decode(data["data"][0]["b64_json"]))
+
+print("High quality image saved")
+
+# FAST / LOW QUALITY - quicker preview
+response = requests.post(
+    f"{BASE_URL}/v1/images/generations",
+    json={
+        "prompt": "A detailed portrait of a medieval knight",
+        "size": "512x512",              # Lower resolution
+        "num_inference_steps": 20,      # Fewer steps = faster
+        "guidance_scale": 1.0,          # Less strict
+        "response_format": "b64_json"
+    },
+    timeout=120
+)
+
+data = response.json()
+with open("fast_preview.png", "wb") as f:
+    f.write(base64.b64decode(data["data"][0]["b64_json"]))
+
+print("Fast preview saved")
+```
+
+| Setting | Fast/Preview | Standard | High Quality |
+|---------|--------------|----------|--------------|
+| `size` | 512x512 | 1024x1024 | 1536x1536 |
+| `num_inference_steps` | 20 | 50 | 100 |
+| `guidance_scale` | 1.0 | 1.5 | 2.0 |
+
 #### Health Check and List Models
 
 ```python
