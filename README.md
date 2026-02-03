@@ -2,7 +2,7 @@
 
 Docker-based server for image and video generation using SGLang with **OpenAI-compatible API**.
 
-## Supported Models (v0.5.0)
+## Supported Models (v0.6.0)
 
 | Model | Type | HuggingFace |
 |-------|------|-------------|
@@ -20,6 +20,32 @@ Tested on **NVIDIA H20 GPUs**. OpenShift compatible - runs as non-root user with
 - CUDA 12.4+ compatible driver
 - 64GB+ system RAM for model loading
 
+## Image Comparison: Official SGLang vs v0.6.0
+
+The v0.6.0 image is based on the official SGLang image with modifications for GLM-Image and Wan 2.2 support:
+
+| Category | Official SGLang (`lmsysorg/sglang:latest`) | v0.6.0 Custom (`glm-image-sglang:v0.6.0`) |
+|----------|-------------------------------------------|-------------------------------------------|
+| **Base** | NVIDIA CUDA 12.9.1 | Same (inherits from official) |
+| **transformers** | 4.57.1 (PyPI) | 5.0.1.dev0 (git main) |
+| **diffusers** | Not installed | 0.37.0.dev0 (git main) |
+| **huggingface_hub** | 0.36.0 | 1.3.7 |
+| **opencv-python** | Not installed | 4.13.0.90 |
+| **imageio-ffmpeg** | Not installed | 0.6.0 |
+| **easydict** | Not installed | 1.13 |
+| **ftfy** | Not installed | 6.3.1 |
+| **HF_HUB_OFFLINE** | Not set | `1` (air-gapped support) |
+| **HF_HOME** | Not set | `/app/models` |
+| **User** | root (UID 0) | 1001 (non-root for OpenShift) |
+| **WORKDIR** | `/sgl-workspace/sglang` | `/app` |
+
+### Why These Changes?
+
+- **transformers/diffusers from git main**: GLM-Image and Wan 2.2 models require unreleased features not yet in PyPI versions
+- **opencv/imageio-ffmpeg**: Required by Wan 2.2 for video encoding
+- **HF_HUB_OFFLINE=1**: Enables air-gapped deployment without internet access
+- **Non-root user**: Required for OpenShift compatibility (arbitrary UID support)
+
 ## Quick Start
 
 ### 1. Build the Docker image
@@ -36,7 +62,7 @@ Tested on **NVIDIA H20 GPUs**. OpenShift compatible - runs as non-root user with
 docker run --gpus all -p 30000:30000 \
   -e MODEL_PATH=/app/models/GLM-Image \
   -v ./models:/app/models \
-  glm-image-sglang:v0.5.0
+  glm-image-sglang:v0.6.0
 ```
 
 **Wan 2.2 T2V (text-to-video):**
@@ -44,7 +70,7 @@ docker run --gpus all -p 30000:30000 \
 docker run --gpus all -p 30000:30000 \
   -e MODEL_PATH=/app/models/Wan2.2-T2V-A14B-Diffusers \
   -v ./models:/app/models \
-  glm-image-sglang:v0.5.0
+  glm-image-sglang:v0.6.0
 ```
 
 **Wan 2.2 I2V (image-to-video):**
@@ -52,7 +78,7 @@ docker run --gpus all -p 30000:30000 \
 docker run --gpus all -p 30000:30000 \
   -e MODEL_PATH=/app/models/Wan2.2-I2V-A14B-Diffusers \
   -v ./models:/app/models \
-  glm-image-sglang:v0.5.0
+  glm-image-sglang:v0.6.0
 ```
 
 ### 3. Access the API
@@ -65,11 +91,11 @@ docker run --gpus all -p 30000:30000 \
 ## Load from tar (offline deployment)
 
 ```bash
-docker load -i glm-image-sglang-v0.5.0.tar
+docker load -i glm-image-sglang-v0.6.0.tar
 docker run --gpus all -p 30000:30000 \
   -e MODEL_PATH=/app/models/GLM-Image \
   -v ./models:/app/models \
-  glm-image-sglang:v0.5.0
+  glm-image-sglang:v0.6.0
 ```
 
 ## API Endpoints
